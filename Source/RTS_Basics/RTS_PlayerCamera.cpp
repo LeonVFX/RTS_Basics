@@ -38,12 +38,11 @@ void ARTS_PlayerCamera::BeginPlay()
 	/// <summary>
 	/// ASYNC FUNTION: Gets the Viewport Dimentions once they are properly initialized
 	/// </summary>
-	TUniqueFunction<void()> GetViewportDimentions = [&]()
+	TUniqueFunction<void()> ViewportThread = [&]()
 	{
-		while (ScreenSizeX == 0 && ScreenSizeY == 0)
-			PC->GetViewportSize(ScreenSizeX, ScreenSizeY);
+		GetViewportDimensions();
 	};
-	Async(EAsyncExecution::Thread, MoveTemp(GetViewportDimentions));
+	Async(EAsyncExecution::Thread, MoveTemp(ViewportThread));
 
 	UE_LOG(LogTemp, Warning, TEXT("%i, %i"), ScreenSizeX, ScreenSizeY);
 }
@@ -102,4 +101,10 @@ void ARTS_PlayerCamera::CameraZoomIn()
 void ARTS_PlayerCamera::CameraZoomOut()
 {
 	SpringArm->TargetArmLength = (SpringArm->TargetArmLength < MaxZoom) ? SpringArm->TargetArmLength + ZoomIncrement : MaxZoom;
+}
+
+void ARTS_PlayerCamera::GetViewportDimensions()
+{
+	while (ScreenSizeX == 0 && ScreenSizeY == 0)
+		PC->GetViewportSize(ScreenSizeX, ScreenSizeY);
 }

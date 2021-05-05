@@ -24,7 +24,4 @@ class RTS_BASICS_API IRTS_UnitInterface
 public:
 	UFUNCTION()
 	virtual void Select() {};
-
-	UFUNCTION()
-	virtual bool bSelected() { return false; };
 };

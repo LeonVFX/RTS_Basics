@@ -78,4 +78,7 @@ private:
 
 	UFUNCTION()
 	void CameraZoomOut();
+
+	UFUNCTION()
+	void GetViewportDimensions();
 };

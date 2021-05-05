@@ -28,8 +28,19 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	// Interface Functions
-	virtual void Select() override {};
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	class AAIController* AIC;
 
-	virtual bool bSelected() override { return false; };
+	// Decal
+	UPROPERTY(EditAnywhere, Category = "Decal")
+	class UDecalComponent* SelectionDecal;
+	
+	UPROPERTY(EditAnywhere)
+	bool bSelected = false;
+
+	// Interface Functions
+	virtual void Select() override;
+
+	// Unique Functions
+	virtual void Move(const FVector& targetLocation);
 };
