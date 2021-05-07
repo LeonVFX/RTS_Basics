@@ -41,7 +41,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UFloatingPawnMovement* FloatingPawnMovement;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY()
 	class APlayerController* PC;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Pan")
@@ -59,6 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Zoom")
 	float ZoomIncrement = 100;
 
+	// Viewport Specifics
+	UPROPERTY()
+	bool bViewportSet = false;
+
 	UPROPERTY()
 	int32 ScreenSizeX;
 
@@ -68,7 +72,7 @@ public:
 private:
 	// Custom Functions
 	UFUNCTION()
-	FVector GetCameraPanDirection();
+	FVector GetCameraPanDirection() const;
 
 	UFUNCTION()
 	void MoveCamera(const FVector& PanDirection);

@@ -5,7 +5,6 @@
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Camera/CameraComponent.h"
 #include "Templates/Function.h"
-#include "Async/Future.h"
 
 // Sets default values
 ARTS_PlayerCamera::ARTS_PlayerCamera()
@@ -14,18 +13,22 @@ ARTS_PlayerCamera::ARTS_PlayerCamera()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Root = CreateDefaultSubobject<USceneComponent>("Root");
+	if (!ensure(Root != nullptr)) return;
 	RootComponent = Root;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
+	if (!ensure(SpringArm != nullptr)) return;
 	SpringArm->SetupAttachment(Root);
 	SpringArm->bDoCollisionTest = false;
 	SpringArm->SetRelativeRotation(FRotator(-70.0, 0, 0));
 	SpringArm->TargetArmLength = 1500;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Player Camera"));
+	if (!ensure(Camera != nullptr)) return;
 	Camera->SetupAttachment(SpringArm);
 
 	FloatingPawnMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Floating Pawn Movement"));
+	if (!ensure(FloatingPawnMovement != nullptr)) return;
 }
 
 // Called when the game starts or when spawned
@@ -34,17 +37,10 @@ void ARTS_PlayerCamera::BeginPlay()
 	Super::BeginPlay();
 	
 	PC = Cast<APlayerController>(GetController());
+	if (!ensure(PC != nullptr)) return;
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *PC->Player->GetName());
 
-	/// <summary>
-	/// ASYNC FUNTION: Gets the Viewport Dimentions once they are properly initialized
-	/// </summary>
-	TUniqueFunction<void()> ViewportThread = [&]()
-	{
-		GetViewportDimensions();
-	};
-	Async(EAsyncExecution::Thread, MoveTemp(ViewportThread));
-
-	UE_LOG(LogTemp, Warning, TEXT("%i, %i"), ScreenSizeX, ScreenSizeY);
+	GetViewportDimensions();
 }
 
 // Called every frame
@@ -52,27 +48,30 @@ void ARTS_PlayerCamera::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	MoveCamera(GetCameraPanDirection());
+	// Safe net in case screen is not on focus
+	if (ScreenSizeX != 0 && ScreenSizeY != 0)
+		MoveCamera(GetCameraPanDirection());
 }
 
 // Called to bind functionality to input
 void ARTS_PlayerCamera::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	check(PlayerInputComponent);
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	
 	PlayerInputComponent->BindAction("CameraZoomIn", IE_Pressed, this, &ARTS_PlayerCamera::CameraZoomIn);
 	PlayerInputComponent->BindAction("CameraZoomOut", IE_Pressed, this, &ARTS_PlayerCamera::CameraZoomOut);
 }
 
-FVector ARTS_PlayerCamera::GetCameraPanDirection()
+FVector ARTS_PlayerCamera::GetCameraPanDirection() const
 {
-	float MousePosX;
-	float MousePosY;
+	float MousePosX = 0;
+	float MousePosY = 0;
 	float CamDirectionX = 0;
 	float CamDirectionY = 0;
 
 	PC->GetMousePosition(MousePosX, MousePosY);
-
+	
 	if (MousePosX <= Margin)
 		CamDirectionY = -1;
 	if (MousePosX >= ScreenSizeX - Margin)
@@ -82,7 +81,7 @@ FVector ARTS_PlayerCamera::GetCameraPanDirection()
 	if (MousePosY >= ScreenSizeY - Margin)
 		CamDirectionX = -1;
 
-	return FVector(CamDirectionX, CamDirectionY, 0);
+	return FVector(CamDirectionX, CamDirectionY, 0.0f);
 }
 
 void ARTS_PlayerCamera::MoveCamera(const FVector& PanDirection)
@@ -103,8 +102,15 @@ void ARTS_PlayerCamera::CameraZoomOut()
 	SpringArm->TargetArmLength = (SpringArm->TargetArmLength < MaxZoom) ? SpringArm->TargetArmLength + ZoomIncrement : MaxZoom;
 }
 
+/// <summary>
+/// ASYNC FUNCTION: Gets the Viewport Dimensions once they are properly initialized
+/// </summary>
 void ARTS_PlayerCamera::GetViewportDimensions()
 {
-	while (ScreenSizeX == 0 && ScreenSizeY == 0)
-		PC->GetViewportSize(ScreenSizeX, ScreenSizeY);
+	TUniqueFunction<void()> ViewportThread = [&]()
+	{
+		while (ScreenSizeX == 0 && ScreenSizeY == 0)
+			PC->GetViewportSize(ScreenSizeX, ScreenSizeY);
+	};
+	Async(EAsyncExecution::TaskGraph, MoveTemp(ViewportThread));
 }

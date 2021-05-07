@@ -12,6 +12,8 @@ ARTS_Unit::ARTS_Unit()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SelectionDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Selection Decal"));
+	if (!ensure(SelectionDecal != nullptr)) return;
+
 	SelectionDecal->SetupAttachment(RootComponent);
 	SelectionDecal->SetRelativeLocation(FVector(-10.0, 0.0, -100.0));
 	SelectionDecal->SetRelativeRotation(FRotator(90.0, 0.0, 0.0));
@@ -27,6 +29,12 @@ void ARTS_Unit::BeginPlay()
 	Super::BeginPlay();
 
 	AIC = Cast<AAIController>(GetController());
+
+	if (!HasAuthority())
+		return;
+
+	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 // Called every frame
@@ -43,7 +51,7 @@ void ARTS_Unit::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void ARTS_Unit::Select()
+void ARTS_Unit::Select_Implementation()
 {
 	if (!bSelected)
 	{
@@ -59,7 +67,7 @@ void ARTS_Unit::Select()
 	}
 }
 
-void ARTS_Unit::Move(const FVector& targetLocation)
+void ARTS_Unit::Move_Implementation(const FVector& targetLocation, float tolerance)
 {
-	AIC->MoveToLocation(targetLocation, 150.0f);
+	AIC->MoveToLocation(targetLocation, tolerance);
 }

@@ -28,8 +28,19 @@ public:
 	// Array to hold all Selected Units
 	TArray<AActor*> SelectedUnits;
 
+	// Decal Values
 	UPROPERTY(EditAnywhere, Category = "Decal")
 	class UMaterialInstance* ActionDecal;
+
+	UPROPERTY(EditAnywhere, Category = "Decal")
+	FVector DecalSize = FVector(5.0, 64.0, 64.0);
+
+	UPROPERTY(EditAnywhere, Category = "Decal")
+	FRotator DecalRotation = FRotator(90.0, 0.0, 0.0);
+
+	// AI Values
+	UPROPERTY(EditAnywhere, Category = "AI Values")
+	float MovementTolerance = 90.0f;
 
 private:
 	UFUNCTION()

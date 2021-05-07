@@ -58,12 +58,13 @@ void ARTS_PlayerController::MoveUnits()
 	GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery_MAX, true, HitResult);
 
 	// Play Decal at Mouse Position
-	UGameplayStatics::SpawnDecalAtLocation(GetWorld(), ActionDecal, FVector(5.0 , 64.0 , 64.0), HitResult.Location, FRotator(90.0, 0.0, 0.0), 0.2f);
+	UGameplayStatics::SpawnDecalAtLocation(GetWorld(), ActionDecal, DecalSize, HitResult.Location, DecalRotation, 0.2f);
 
 	// Call the move function
 	if (SelectedUnits.Num() != 0)
 		for (AActor* AUnit : SelectedUnits)
 		{
-			static_cast<ARTS_Unit*>(AUnit)->Move(HitResult.Location);
+			float tolerance = (SelectedUnits.Num() - 1) * MovementTolerance;
+			static_cast<ARTS_Unit*>(AUnit)->Move(HitResult.Location, tolerance);
 		}
 }

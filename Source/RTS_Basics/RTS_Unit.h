@@ -34,13 +34,15 @@ public:
 	// Decal
 	UPROPERTY(EditAnywhere, Category = "Decal")
 	class UDecalComponent* SelectionDecal;
-	
+
 	UPROPERTY(EditAnywhere)
 	bool bSelected = false;
 
 	// Interface Functions
+	UFUNCTION ( Client, Reliable )
 	virtual void Select() override;
 
 	// Unique Functions
-	virtual void Move(const FVector& targetLocation);
+	UFUNCTION( Server, Reliable)
+	virtual void Move(const FVector& targetLocation, float tolerance);
 };
