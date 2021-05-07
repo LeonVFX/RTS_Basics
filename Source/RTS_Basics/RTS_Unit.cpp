@@ -4,6 +4,7 @@
 
 #include "AIController.h"
 #include "Components/DecalComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ARTS_Unit::ARTS_Unit()
@@ -28,8 +29,14 @@ void ARTS_Unit::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AIC = Cast<AAIController>(GetController());
+	if(!IsLocallyControlled())
+		return;
 
+	AIC = Cast<AAIController>(GetController());
+	if(!ensure(AIC != nullptr)) return;
+
+	//UE_LOG(LogTemp, Warning, TEXT("Begin Play Owner: %s"), *GetOwner()->);
+	
 	if (!HasAuthority())
 		return;
 
@@ -51,23 +58,54 @@ void ARTS_Unit::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void ARTS_Unit::Select_Implementation()
+void ARTS_Unit::Select()
+{
+	Client_Select();
+}
+
+void ARTS_Unit::Client_Select_Implementation()
 {
 	if (!bSelected)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Unit Selected!"));
+		//UE_LOG(LogTemp, Warning, TEXT("Unit Selected!"));
 		SelectionDecal->SetVisibility(true);
 		bSelected = true;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Unit Deselected!"));
+		//UE_LOG(LogTemp, Warning, TEXT("Unit Deselected!"));
 		SelectionDecal->SetVisibility(false);
 		bSelected = false;
 	}
 }
 
-void ARTS_Unit::Move_Implementation(const FVector& targetLocation, float tolerance)
+void ARTS_Unit::Move(const FVector& targetLocation, float tolerance) const
 {
+	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 1"));
+	UE_LOG(LogTemp, Warning, TEXT("Role: %i"), GetLocalRole());
+	
+	if (HasAuthority())
+		AIC->MoveToLocation(targetLocation, tolerance);
+	else
+		Server_Move(targetLocation, tolerance);
+}
+
+void ARTS_Unit::Server_Move_Implementation(const FVector& targetLocation, float tolerance) const
+{
+	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 2"));
+	AuthMove(targetLocation, tolerance);
+}
+
+void ARTS_Unit::AuthMove(const FVector& targetLocation, float tolerance) const
+{
+	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 3"));
+	if (!HasAuthority())
+		return;
+	
 	AIC->MoveToLocation(targetLocation, tolerance);
 }
+
+// void ARTS_Unit::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & OutLifetimeProps ) const
+// {
+// 	DOREPLIFETIME( ARTS_Unit, OwningPlayer );
+// }

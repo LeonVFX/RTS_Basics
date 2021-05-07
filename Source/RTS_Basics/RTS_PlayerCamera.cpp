@@ -35,6 +35,9 @@ ARTS_PlayerCamera::ARTS_PlayerCamera()
 void ARTS_PlayerCamera::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(!IsLocallyControlled())
+		return;
 	
 	PC = Cast<APlayerController>(GetController());
 	if (!ensure(PC != nullptr)) return;
@@ -70,7 +73,8 @@ FVector ARTS_PlayerCamera::GetCameraPanDirection() const
 	float CamDirectionX = 0;
 	float CamDirectionY = 0;
 
-	PC->GetMousePosition(MousePosX, MousePosY);
+	if (!PC->GetMousePosition(MousePosX, MousePosY))
+		return FVector::ZeroVector;
 	
 	if (MousePosX <= Margin)
 		CamDirectionY = -1;

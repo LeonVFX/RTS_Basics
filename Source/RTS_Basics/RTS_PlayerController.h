@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "RTS_Unit.h"
 #include "GameFramework/PlayerController.h"
 #include "RTS_PlayerController.generated.h"
 
@@ -38,6 +40,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Decal")
 	FRotator DecalRotation = FRotator(90.0, 0.0, 0.0);
 
+	// Unit Values
+	UPROPERTY(EditAnywhere, Category = "Spawnables")
+	TSubclassOf<class ARTS_Unit> UnitToSpawn;
+
 	// AI Values
 	UPROPERTY(EditAnywhere, Category = "AI Values")
 	float MovementTolerance = 90.0f;
@@ -48,4 +54,18 @@ private:
 
 	UFUNCTION()
 	void MoveUnits();
+
+	UFUNCTION()
+	void SpawnUnit();
+
+	UFUNCTION( Server, Reliable )
+	void Server_SpawnUnit(APlayerController* PC, const FVector& _SpawnLocation);
+	void Server_SpawnUnit_Implementation(APlayerController* PC, const FVector& _SpawnLocation);
+
+	UFUNCTION()
+	void AuthSpawnUnit(APlayerController* PC, const FVector& _SpawnLocation);
+
+	// UFUNCTION( Client, Reliable )
+	// void Client_Ownership(ARTS_Unit* unit);
+	// void Client_Ownership_Implementation(ARTS_Unit* unit);
 };

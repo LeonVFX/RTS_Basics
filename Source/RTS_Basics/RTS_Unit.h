@@ -28,6 +28,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
+	// Owner
+	// UPROPERTY(VisibleAnywhere, Replicated)
+	// class APlayerController* OwningPlayer;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class AAIController* AIC;
 
@@ -39,10 +43,21 @@ public:
 	bool bSelected = false;
 
 	// Interface Functions
-	UFUNCTION ( Client, Reliable )
+	UFUNCTION()
 	virtual void Select() override;
 
+	UFUNCTION( Client, Reliable )
+	void Client_Select();
+	void Client_Select_Implementation();
+
 	// Unique Functions
-	UFUNCTION( Server, Reliable)
-	virtual void Move(const FVector& targetLocation, float tolerance);
+	UFUNCTION()
+	void Move(const FVector& targetLocation, float tolerance) const;
+
+	UFUNCTION(Server, Reliable)
+	void Server_Move(const FVector& targetLocation, float tolerance) const;
+	void Server_Move_Implementation(const FVector& targetLocation, float tolerance) const;
+
+	UFUNCTION()
+	void AuthMove(const FVector& targetLocation, float tolerance) const;
 };
