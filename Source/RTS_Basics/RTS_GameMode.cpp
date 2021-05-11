@@ -17,6 +17,4 @@ ARTS_GameMode::ARTS_GameMode()
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/RTS_Basics/Blueprints/BP_RTS_PlayerCamera"));
 	if (PlayerPawnBPClass.Class != nullptr)
 		DefaultPawnClass = PlayerPawnBPClass.Class;
-
-	//DefaultPawnClass = ARTS_PlayerCamera::StaticClass();
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
 #include "GameFramework/Character.h"
 #include "RTS_UnitInterface.h"
 #include "RTS_Unit.generated.h"
@@ -26,11 +27,13 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	
 public:
-	// Owner
-	// UPROPERTY(VisibleAnywhere, Replicated)
-	// class APlayerController* OwningPlayer;
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "UnitDetails")
+	int32 ID;
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
+	class APlayerController* OwningPlayer;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class AAIController* AIC;
@@ -49,15 +52,4 @@ public:
 	UFUNCTION( Client, Reliable )
 	void Client_Select();
 	void Client_Select_Implementation();
-
-	// Unique Functions
-	UFUNCTION()
-	void Move(const FVector& targetLocation, float tolerance) const;
-
-	UFUNCTION(Server, Reliable)
-	void Server_Move(const FVector& targetLocation, float tolerance) const;
-	void Server_Move_Implementation(const FVector& targetLocation, float tolerance) const;
-
-	UFUNCTION()
-	void AuthMove(const FVector& targetLocation, float tolerance) const;
 };

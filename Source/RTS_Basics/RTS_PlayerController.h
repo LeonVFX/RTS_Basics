@@ -19,15 +19,16 @@ class RTS_BASICS_API ARTS_PlayerController : public APlayerController
 public:
 	// Constructor
 	ARTS_PlayerController();
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	
+	virtual void BeginPlay() override;
 
 	// Called to bind functionality to input
 	virtual void SetupInputComponent() override;
 
 public:
+	
 	// Array to hold all Selected Units
+	UPROPERTY(VisibleAnywhere, Category = "Debug Var")
 	TArray<AActor*> SelectedUnits;
 
 	// Decal Values
@@ -55,6 +56,13 @@ private:
 	UFUNCTION()
 	void MoveUnits();
 
+	UFUNCTION(Server, Reliable)
+	void Server_MoveUnits(const TArray<int32>& Units, const FVector& TargetLocation, float Tolerance);
+	void Server_MoveUnits_Implementation(const TArray<int32>& Units, const FVector& TargetLocation, float Tolerance);
+	
+	UFUNCTION()
+	void MoveSingleUnit(AActor* Actor, const FVector& TargetLocation, float Tolerance);
+
 	UFUNCTION()
 	void SpawnUnit();
 
@@ -64,8 +72,4 @@ private:
 
 	UFUNCTION()
 	void AuthSpawnUnit(APlayerController* PC, const FVector& _SpawnLocation);
-
-	// UFUNCTION( Client, Reliable )
-	// void Client_Ownership(ARTS_Unit* unit);
-	// void Client_Ownership_Implementation(ARTS_Unit* unit);
 };

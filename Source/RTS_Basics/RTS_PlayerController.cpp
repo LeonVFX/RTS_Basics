@@ -1,20 +1,22 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "RTS_PlayerController.h"
-#include "RTS_Unit.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "RTS_GameInstance.h"
+#include "AIController.h"
+#include "RTS_Unit.h"
 
 ARTS_PlayerController::ARTS_PlayerController()
 {
+	bReplicates = true;
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Crosshairs;
 }
 
-// Called every frame
-void ARTS_PlayerController::Tick(float DeltaTime)
+void ARTS_PlayerController::BeginPlay()
 {
-	Super::Tick(DeltaTime);
+	Super::BeginPlay();
 }
 
 // Called to bind functionality to input
@@ -32,14 +34,16 @@ void ARTS_PlayerController::SelectUnit()
 	FHitResult HitResult;
 	GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery_MAX, true, HitResult);
 
-	// UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetActor()->GetName());
-
 	if (HitResult.Actor.IsValid())
 	{
 		if (HitResult.GetActor()->IsA(ARTS_Unit::StaticClass()))
 		{
 			AActor* AUnit = HitResult.GetActor();
 			ARTS_Unit* Unit = static_cast<ARTS_Unit*>(AUnit);
+
+			// If Owner Only
+			if (Unit->OwningPlayer != this)
+				return;
 			
 			if (!Unit->bSelected)
 				SelectedUnits.Add(AUnit);
@@ -47,7 +51,6 @@ void ARTS_PlayerController::SelectUnit()
 				SelectedUnits.Remove(AUnit);
 
 			Unit->Select();
-			// UE_LOG(LogTemp, Warning, TEXT("%s"), *HitResult.GetActor()->GetName());
 		}
 	}
 }
@@ -60,14 +63,32 @@ void ARTS_PlayerController::MoveUnits()
 	// Play Decal at Mouse Position
 	UGameplayStatics::SpawnDecalAtLocation(GetWorld(), ActionDecal, DecalSize, HitResult.Location, DecalRotation, 0.2f);
 
-	// Call the move function
+	TArray<int32> Units;
 	if (SelectedUnits.Num() != 0)
 		for (AActor* AUnit : SelectedUnits)
 		{
 			ARTS_Unit* _RTS_Unit = static_cast<ARTS_Unit*>(AUnit);
-			const float tolerance = (SelectedUnits.Num() - 1) * MovementTolerance;
-			_RTS_Unit->Move(HitResult.Location, tolerance);
+			Units.Add(_RTS_Unit->ID);
 		}
+	
+	if (HasAuthority())
+	{
+		for (int32 Key : Units)
+			MoveSingleUnit(GetGameInstance<URTS_GameInstance>()->UnitMap[Key], HitResult.Location, (SelectedUnits.Num() - 1) * MovementTolerance);
+	}
+	else
+		Server_MoveUnits(Units, HitResult.Location, (SelectedUnits.Num() - 1) * MovementTolerance);
+}
+
+void ARTS_PlayerController::Server_MoveUnits_Implementation(const TArray<int32>& Units, const FVector& TargetLocation, float Tolerance)
+{
+	for (int32 Key : Units)
+		MoveSingleUnit(GetGameInstance<URTS_GameInstance>()->UnitMap[Key], TargetLocation, Tolerance);
+}
+
+void ARTS_PlayerController::MoveSingleUnit(AActor* Actor, const FVector& TargetLocation, float Tolerance)
+{
+	static_cast<ARTS_Unit*>(Actor)->AIC->MoveToLocation(TargetLocation, Tolerance);
 }
 
 void ARTS_PlayerController::SpawnUnit()
@@ -76,20 +97,14 @@ void ARTS_PlayerController::SpawnUnit()
 	GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery_MAX, true, HitResult);
 	
 	if (HasAuthority())
-	{
 		AuthSpawnUnit(this, HitResult.Location);
-		//UE_LOG(LogTemp, Warning, TEXT("Has authority"));
-	}
 	else
-	{
 		Server_SpawnUnit(this, HitResult.Location);
-		//UE_LOG(LogTemp, Warning, TEXT("Does not have authority"));
-	}
 }
 
 void ARTS_PlayerController::Server_SpawnUnit_Implementation(APlayerController* PC, const FVector& _SpawnLocation)
 {
-	AuthSpawnUnit(this, _SpawnLocation);
+	AuthSpawnUnit(PC, _SpawnLocation);
 }
 
 void ARTS_PlayerController::AuthSpawnUnit(APlayerController* PC, const FVector& _SpawnLocation)
@@ -109,19 +124,5 @@ void ARTS_PlayerController::AuthSpawnUnit(APlayerController* PC, const FVector& 
 	SpawnParams.Owner = PC;
 
 	ARTS_Unit* NewUnit = World->SpawnActor<ARTS_Unit>(UnitToSpawn, _SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-	UE_LOG(LogTemp, Warning, TEXT("Server: %s"), *GetName());
-
-	if (this != PC)
-		NewUnit->SetOwner(PC);
-	//Client_Ownership(NewUnit);
+	NewUnit->OwningPlayer = PC;
 }
-
-// void ARTS_PlayerController::Client_Ownership_Implementation(ARTS_Unit* unit)
-// {
-// 	UE_LOG(LogTemp, Warning, TEXT("Client: %s"), *GetName());
-// 	
-// 	while (unit == nullptr)
-// 		continue;
-//
-// 	unit->SetOwner(this);
-// }

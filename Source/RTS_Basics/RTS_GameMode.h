@@ -15,5 +15,6 @@ class ARTS_GameMode : public AGameModeBase
 	GENERATED_BODY()
     
 public:
+
 	ARTS_GameMode();
 };

@@ -3,6 +3,12 @@
 
 #include "RTS_GameInstance.h"
 
+int URTS_GameInstance::RegisterUnit(AActor* Unit)
+{
+	UnitMap.Add(NextUnitID, Unit);
+	return NextUnitID++;
+}
+
 void URTS_GameInstance::Host() const
 {
 	UEngine* Engine = GetEngine();

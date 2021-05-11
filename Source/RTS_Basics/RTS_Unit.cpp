@@ -2,7 +2,8 @@
 
 #include "RTS_Unit.h"
 
-#include "AIController.h"
+#include "RTS_AIController.h"
+#include "RTS_GameInstance.h"
 #include "Components/DecalComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -29,16 +30,14 @@ void ARTS_Unit::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(!IsLocallyControlled())
+	if (!HasAuthority())
 		return;
+	
+	// Set Unit ID
+	ID = GetGameInstance<URTS_GameInstance>()->RegisterUnit(this);
 
 	AIC = Cast<AAIController>(GetController());
 	if(!ensure(AIC != nullptr)) return;
-
-	//UE_LOG(LogTemp, Warning, TEXT("Begin Play Owner: %s"), *GetOwner()->);
-	
-	if (!HasAuthority())
-		return;
 
 	SetReplicates(true);
 	SetReplicateMovement(true);
@@ -79,33 +78,11 @@ void ARTS_Unit::Client_Select_Implementation()
 	}
 }
 
-void ARTS_Unit::Move(const FVector& targetLocation, float tolerance) const
-{
-	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 1"));
-	UE_LOG(LogTemp, Warning, TEXT("Role: %i"), GetLocalRole());
-	
-	if (HasAuthority())
-		AIC->MoveToLocation(targetLocation, tolerance);
-	else
-		Server_Move(targetLocation, tolerance);
-}
+/* CPP file of our GameState Class */
+// This function is required through the Replicated specifier in the UPROPERTY Macro and is declared by it
+void ARTS_Unit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-void ARTS_Unit::Server_Move_Implementation(const FVector& targetLocation, float tolerance) const
-{
-	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 2"));
-	AuthMove(targetLocation, tolerance);
+	DOREPLIFETIME(ARTS_Unit, ID);
+	DOREPLIFETIME(ARTS_Unit, OwningPlayer);
 }
-
-void ARTS_Unit::AuthMove(const FVector& targetLocation, float tolerance) const
-{
-	UE_LOG(LogTemp, Warning, TEXT("Moving - Step 3"));
-	if (!HasAuthority())
-		return;
-	
-	AIC->MoveToLocation(targetLocation, tolerance);
-}
-
-// void ARTS_Unit::GetLifetimeReplicatedProps( TArray< FLifetimeProperty > & OutLifetimeProps ) const
-// {
-// 	DOREPLIFETIME( ARTS_Unit, OwningPlayer );
-// }
